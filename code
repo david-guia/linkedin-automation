@@ -1,0 +1,85 @@
+async function moreConnectionsPlease() {
+  // limite maximale de boutons de connexion cliqués
+  const LIMIT = 500;
+  // attendre en ms avant chaque défilement
+  const SCROLL_TIMEOUT = 600;
+  // le défilement en masse fera défiler ce nombre de fois
+  const BULK_SCROLL_COUNT = 15;
+  // attendre en ms avant chaque clic
+  const CLICK_DELAY = 300;
+  // si ce nombre de connexions dans la page, le temps de cliquer
+  const MINIMUM_CONNECTS_TO_CLICK = 60;
+  // si ce nombre de connexions dans la page, il est temps de faire défiler
+  const MINIMUM_CONNECTS_TO_SCROLL = 10;
+
+  var connects = 0;
+  var fails = 0;
+
+  // récupère le tableau des boutons « Connecter »
+  function selectButtonElements() {
+    return [...document.querySelectorAll("button span")].filter(a =>
+      a.textContent.includes("Connect")
+    );
+  }
+
+  // défile jusqu'au bas de la page
+  async function singleScroll() {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        window.scrollTo(0, document.body.scrollHeight);
+        console.log("scroll!");
+        resolve();
+      }, SCROLL_TIMEOUT);
+    });
+  }
+
+  // retarde le clic d'un élément HTML
+  async function singleClick(elem) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        elem.click();
+        resolve();
+      }, CLICK_DELAY);
+    });
+  }
+
+  // faites défiler la page plusieurs fois jusqu'en bas
+  async function bulkScroll() {
+    for (let i = 0; i < BULK_SCROLL_COUNT; i++) {
+      await singleScroll();
+    }
+  }
+
+  // cliquez sur tous les boutons de connexion sauf quelques-uns
+  async function bulkClick() {
+    let elements = selectButtonElements();
+    console.log("elements length:", elements.length);
+    for (let i = 0; i < elements.length - MINIMUM_CONNECTS_TO_SCROLL; i++) {
+      try {
+        await singleClick(elements[i]);
+        console.log("click!");
+        connects++;
+      } catch (err) {
+        fails++;
+      }
+    }
+  }
+
+  // la liste des personnes à connecter doit contenir un nombre minimum de personnes
+  function isManyConnects(amount) {
+    return selectButtonElements().length >= amount;
+  }
+
+  do {
+    if (isManyConnects(MINIMUM_CONNECTS_TO_CLICK)) {
+      console.log("There are plenty of connections, time to click...");
+      await bulkClick();
+    } else {
+      console.log("Out of connections, need to scroll...");
+      await bulkScroll();
+    }
+    console.log(`New Connections:${connects} Failed clicks:${fails}`);
+  } while (connects < LIMIT);
+}
+
+moreConnectionsPlease();
